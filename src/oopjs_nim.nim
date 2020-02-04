@@ -1,7 +1,22 @@
 import macros, jsffi
+from strutils import join
 
 when not defined(js):
   {.error: "oopjs.nim is only available for the JS target".}
+
+proc argsList(vars: varags[auto]): auto =
+    result = vars.join(",")
+
+template super(vars: varags[auto]): auto =
+  {.emit("super(" & argsList(vars) & ");").}
+
+template superMethod(methodName: cstring, vars: varags[auto]): auto =
+  {.emit("super." & methodName & "(" & argsList(vars) & ");").}
+
+template constructor(vars: varags[auto], body: untyped): auto =
+  {.emit("constructor(" & argsList(vars) & ")" & " {").}
+  body
+  {.emit("}").}
 
 macro class*(head, body: untyped): untyped =
   # The macro is immediate, since all its parameters are untyped.
@@ -190,41 +205,3 @@ macro class*(head, body: untyped): untyped =
 
 # ---
 
-class Animal of JsObject:
-  var name: string
-  var age: int
-  method vocalize: string {.base.} = "..." # use `base` pragma to annotate base methods
-  method age_human_yrs: int {.base.} = self.age # `self` is injected
-  proc `$`: string = "animal:" & self.name & ":" & $self.age
-
-class Dog of Animal:
-  method vocalize: string = "woof"
-  method age_human_yrs: int = self.age * 7
-  proc `$`: string = "dog:" & self.name & ":" & $self.age
-
-class Cat of Animal:
-  method vocalize: string = "meow"
-  proc `$`: string = "cat:" & self.name & ":" & $self.age
-
-class Rabbit of Animal:
-  proc newRabbit(name: string, age: int) = # the constructor doesn't need a return type
-    result = Rabbit(name: name, age: age)
-  method vocalize: string = "meep"
-  proc `$`: string = "rabbit:" & self.name & ":" & $self.age
-
-# ---
-
-var animals: seq[Animal] = @[]
-animals.add(Dog(name: "Sparky", age: 10))
-animals.add(Cat(name: "Mitten", age: 10))
-
-for a in animals:
-  echo a.vocalize()
-  echo a.age_human_yrs()
-
-let r = newRabbit("Fluffy", 3)
-echo r.vocalize()
-echo r.age_human_yrs()
-# `$` is not dynamically dispatched--if `r`'s type was
-# Animal instead of Rabbit, 'animal:…' would be printed.
-echo r

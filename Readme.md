@@ -42,3 +42,31 @@ echo r.vocalize()
 echo r.age_human_yrs()
 ```
 
+Using `super`
+
+```nim
+class Cat of Animal:
+  method vocalize: string =
+    superMethod('vocalize')
+
+  method walk(yards: cint): string =
+    superMethod('walk', yards)
+
+class Rabbit of Animal:
+  proc newRabbit(name: string, age: int) = # the constructor doesn't need a return type
+    result = Rabbit(name: name, age: age)
+  method vocalize: string = "meep"
+  proc `$`: string = "rabbit:" & self.name & ":" & $self.age
+
+
+class Tiger of Animal:
+  constructor(name: cstring):
+    super(name)
+
+  # the constructor doesn't need a return type
+  proc newTiger(name: string, age: int) =
+    result = Tiger(name: name, age: age)
+
+  method eat(food: Animal): string =
+    superMethod('eat', food)
+```
